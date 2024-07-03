@@ -13,9 +13,10 @@
 
     <script type="text/javascript">
         async function fetchSubscribers() {
-            // Загрузить библиотеку beautifulsoup4
-            await pyodide.loadPackage("beautifulsoup4");
+            // Загрузка пакета beautifulsoup4 перед использованием
+            await pyodide.loadPackage('beautifulsoup4');
 
+            // Выполнение HTTP-запроса для получения данных
             const response = await fetch('https://t.me/hamster_kombat');
             const text = await response.text();
             return text;
@@ -30,12 +31,14 @@
     <py-script>
         import asyncio
         from js import pyscript
-        from pyodide.http import pyfetch
         from bs4 import BeautifulSoup
+        import micropip
 
-        async def extract_subscribers_count():
-            html_content = Element("html_content").innerHTML
-            soup = BeautifulSoup(html_content, 'html.parser')
+        async def install_packages():
+            await micropip.install("beautifulsoup4")
+
+        async def extract_subscribers_count(html):
+            soup = BeautifulSoup(html, 'html.parser')
             subscribers_info = soup.find('div', class_='tgme_page_extra')
             if subscribers_info:
                 subscribers_text = subscribers_info.text.strip()
@@ -51,8 +54,17 @@
             else:
                 return "Информация о подписчиках не найдена."
 
-        count = await extract_subscribers_count()
-        Element("output").element.innerHTML = f"<p>{count}</p>"
+        async def main():
+            # Установка необходимых пакетов
+            await install_packages()
+
+            # Получение HTML контента из JavaScript
+            html_content = Element("html_content").element.innerHTML
+            count = await extract_subscribers_count(html_content)
+            Element("output").element.innerHTML = f"<p>{count}</p>"
+
+        # Запуск основной корутины
+        asyncio.ensure_future(main())
     </py-script>
 </body>
 </html>

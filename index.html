@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Channel Subscribers</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+</head>
+<body>
+    <h1>Количество подписчиков на канале:</h1>
+    <div id="output"></div>
+
+    <py-script>
+        import requests
+        from bs4 import BeautifulSoup
+
+        channel_url = 'https://t.me/hamster_kombat'  # Укажите нужный URL
+
+        def get_subscribers_count(channel_url):
+            try:
+                response = requests.get(channel_url)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.content, 'html.parser')
+                subscribers_info = soup.find('div', class_='tgme_page_extra')
+                if subscribers_info:
+                    subscribers_text = subscribers_info.text.strip()
+                    if 'members' in subscribers_text:
+                        subscribers_text = subscribers_text.split(' members')[0].replace(',', '')
+                    elif 'subscribers' in subscribers_text:
+                        subscribers_text = subscribers_text.split(' subscribers')[0].replace(',', '')
+                    elif 'online' in subscribers_text:
+                        subscribers_text = subscribers_text.split(' online')[0].replace(',', '')
+                    if ' ' in subscribers_text and all(c.isdigit() or c == ' ' for c in subscribers_text):
+                        subscribers_text = subscribers_text.replace(' ', '')
+                    return int(subscribers_text)
+                else:
+                    return "Информация о подписчиках не найдена."
+            except requests.exceptions.RequestException as e:
+                return f"Ошибка при выполнении запроса: {e}"
+
+        count = get_subscribers_count(channel_url)
+        Element("output").element.innerHTML = f"<p>{count}</p>"
+    </py-script>
+</body>
+</html>

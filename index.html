@@ -11,36 +11,45 @@
     <h1>Количество подписчиков на канале:</h1>
     <div id="output"></div>
 
+    <script type="text/javascript">
+        async function fetchSubscribers() {
+            const response = await fetch('https://t.me/hamster_kombat');
+            const text = await response.text();
+            return text;
+        }
+
+        fetchSubscribers().then(data => {
+            // Передача данных в Python для дальнейшего анализа
+            pyscript.write("output", data);
+        });
+    </script>
+
     <py-script>
-        import requests
-        from bs4 import BeautifulSoup
+        from js import pyscript
 
-        channel_url = 'https://t.me/hamster_kombat'  # Укажите нужный URL
+        def extract_subscribers_count(html):
+            from bs4 import BeautifulSoup
 
-        def get_subscribers_count(channel_url):
-            try:
-                response = requests.get(channel_url)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.content, 'html.parser')
-                subscribers_info = soup.find('div', class_='tgme_page_extra')
-                if subscribers_info:
-                    subscribers_text = subscribers_info.text.strip()
-                    if 'members' in subscribers_text:
-                        subscribers_text = subscribers_text.split(' members')[0].replace(',', '')
-                    elif 'subscribers' in subscribers_text:
-                        subscribers_text = subscribers_text.split(' subscribers')[0].replace(',', '')
-                    elif 'online' in subscribers_text:
-                        subscribers_text = subscribers_text.split(' online')[0].replace(',', '')
-                    if ' ' in subscribers_text and all(c.isdigit() or c == ' ' for c in subscribers_text):
-                        subscribers_text = subscribers_text.replace(' ', '')
-                    return int(subscribers_text)
-                else:
-                    return "Информация о подписчиках не найдена."
-            except requests.exceptions.RequestException as e:
-                return f"Ошибка при выполнении запроса: {e}"
+            soup = BeautifulSoup(html, 'html.parser')
+            subscribers_info = soup.find('div', class_='tgme_page_extra')
+            if subscribers_info:
+                subscribers_text = subscribers_info.text.strip()
+                if 'members' in subscribers_text:
+                    subscribers_text = subscribers_text.split(' members')[0].replace(',', '')
+                elif 'subscribers' in subscribers_text:
+                    subscribers_text = subscribers_text.split(' subscribers')[0].replace(',', '')
+                elif 'online' in subscribers_text:
+                    subscribers_text = subscribers_text.split(' online')[0].replace(',', '')
+                if ' ' in subscribers_text and all(c.isdigit() or c == ' ' for c in subscribers_text):
+                    subscribers_text = subscribers_text.replace(' ', '')
+                return int(subscribers_text)
+            else:
+                return "Информация о подписчиках не найдена."
 
-        count = get_subscribers_count(channel_url)
+        html_content = Element("output").element.innerHTML
+        count = extract_subscribers_count(html_content)
         Element("output").element.innerHTML = f"<p>{count}</p>"
     </py-script>
 </body>
 </html>
+

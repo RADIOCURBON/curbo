@@ -13,6 +13,9 @@
 
     <script type="text/javascript">
         async function fetchSubscribers() {
+            // Загрузить библиотеку beautifulsoup4
+            await pyodide.loadPackage("beautifulsoup4");
+
             const response = await fetch('https://t.me/hamster_kombat');
             const text = await response.text();
             return text;
@@ -52,4 +55,5 @@
     </py-script>
 </body>
 </html>
+
 

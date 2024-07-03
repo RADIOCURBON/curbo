@@ -23,17 +23,19 @@
 
         fetchSubscribers().then(data => {
             // Передача данных в Python для дальнейшего анализа
-            pyscript.write("output", data);
+            pyscript.write("html_content", data);
         });
     </script>
 
     <py-script>
+        import asyncio
         from js import pyscript
+        from pyodide.http import pyfetch
+        from bs4 import BeautifulSoup
 
-        def extract_subscribers_count(html):
-            from bs4 import BeautifulSoup
-
-            soup = BeautifulSoup(html, 'html.parser')
+        async def extract_subscribers_count():
+            html_content = Element("html_content").innerHTML
+            soup = BeautifulSoup(html_content, 'html.parser')
             subscribers_info = soup.find('div', class_='tgme_page_extra')
             if subscribers_info:
                 subscribers_text = subscribers_info.text.strip()
@@ -49,8 +51,7 @@
             else:
                 return "Информация о подписчиках не найдена."
 
-        html_content = Element("output").element.innerHTML
-        count = extract_subscribers_count(html_content)
+        count = await extract_subscribers_count()
         Element("output").element.innerHTML = f"<p>{count}</p>"
     </py-script>
 </body>

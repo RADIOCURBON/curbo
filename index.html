@@ -10,10 +10,26 @@
 <body>
     <h1>Количество подписчиков на канале:</h1>
     <div id="output"></div>
+    
+    <py-script>
+        # В этом блоке мы только загружаем библиотеки и определяем корутину
+        import micropip
+        from js import pyscript
+
+        async def install_packages():
+            await micropip.install("beautifulsoup4")
+
+        async def main():
+            # Установка необходимых пакетов
+            await install_packages()
+
+        # Запуск основной корутины
+        asyncio.ensure_future(main())
+    </py-script>
 
     <script type="text/javascript">
         async function fetchSubscribers() {
-            // Загрузка пакета beautifulsoup4 перед использованием
+            // Установка необходимых пакетов с помощью PyScript
             await pyodide.loadPackage('beautifulsoup4');
 
             // Выполнение HTTP-запроса для получения данных
@@ -26,47 +42,41 @@
             // Передача данных в Python для дальнейшего анализа
             pyscript.write("html_content", data);
         });
+
+        // Запуск PyScript после загрузки данных
+        window.onload = () => {
+            pyscript.runPython(`
+                import asyncio
+                from js import pyscript
+                from bs4 import BeautifulSoup
+
+                async def extract_subscribers_count(html):
+                    soup = BeautifulSoup(html, 'html.parser')
+                    subscribers_info = soup.find('div', class_='tgme_page_extra')
+                    if subscribers_info:
+                        subscribers_text = subscribers_info.text.strip()
+                        if 'members' in subscribers_text:
+                            subscribers_text = subscribers_text.split(' members')[0].replace(',', '')
+                        elif 'subscribers' in subscribers_text:
+                            subscribers_text = subscribers_text.split(' subscribers')[0].replace(',', '')
+                        elif 'online' in subscribers_text:
+                            subscribers_text = subscribers_text.split(' online')[0].replace(',', '')
+                        if ' ' in subscribers_text and all(c.isdigit() or c == ' ' for c in subscribers_text):
+                            subscribers_text = subscribers_text.replace(' ', '')
+                        return int(subscribers_text)
+                    else:
+                        return "Информация о подписчиках не найдена."
+
+                async def main():
+                    html_content = Element("html_content").element.innerHTML
+                    count = await extract_subscribers_count(html_content)
+                    Element("output").element.innerHTML = f"<p>{count}</p>"
+
+                # Запуск основной корутины
+                asyncio.ensure_future(main())
+            `);
+        };
     </script>
-
-    <py-script>
-        import asyncio
-        from js import pyscript
-        from bs4 import BeautifulSoup
-        import micropip
-
-        async def install_packages():
-            await micropip.install("beautifulsoup4")
-
-        async def extract_subscribers_count(html):
-            soup = BeautifulSoup(html, 'html.parser')
-            subscribers_info = soup.find('div', class_='tgme_page_extra')
-            if subscribers_info:
-                subscribers_text = subscribers_info.text.strip()
-                if 'members' in subscribers_text:
-                    subscribers_text = subscribers_text.split(' members')[0].replace(',', '')
-                elif 'subscribers' in subscribers_text:
-                    subscribers_text = subscribers_text.split(' subscribers')[0].replace(',', '')
-                elif 'online' in subscribers_text:
-                    subscribers_text = subscribers_text.split(' online')[0].replace(',', '')
-                if ' ' in subscribers_text and all(c.isdigit() or c == ' ' for c in subscribers_text):
-                    subscribers_text = subscribers_text.replace(' ', '')
-                return int(subscribers_text)
-            else:
-                return "Информация о подписчиках не найдена."
-
-        async def main():
-            # Установка необходимых пакетов
-            await install_packages()
-
-            # Получение HTML контента из JavaScript
-            html_content = Element("html_content").element.innerHTML
-            count = await extract_subscribers_count(html_content)
-            Element("output").element.innerHTML = f"<p>{count}</p>"
-
-        # Запуск основной корутины
-        asyncio.ensure_future(main())
-    </py-script>
 </body>
 </html>
-
 
